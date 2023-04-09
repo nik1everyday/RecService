@@ -1,8 +1,8 @@
+from typing import Optional
+
 import dill
 import pandas as pd
 import yaml
-from typing import Optional
-
 
 with open('service/config/config.yaml') as stream:
     config = yaml.safe_load(stream)
