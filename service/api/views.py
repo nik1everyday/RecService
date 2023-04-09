@@ -1,5 +1,4 @@
 from typing import List
-import dill
 import yaml
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -12,7 +11,7 @@ from service.api.exceptions import (
 )
 from service.api.responses import responses
 from service.log import app_logger
-from service.reco_models.model_classes import Popular, UserKNN, LightFM
+from service.reco_models.model_classes import Popular, UserKNN
 
 # config_file = 'service/config/config.yaml'
 with open('service/config/config.yaml') as stream:
@@ -29,7 +28,6 @@ bearer_scheme = HTTPBearer()
 
 UserKNN.load_model()
 Popular.load_model()
-#LightFM.load_model()
 
 
 @router.get(
@@ -96,20 +94,6 @@ async def get_reco(
                 if popular_reco[i] not in reco:
                     reco.append(popular_reco[i])
                 i += 1
-    #elif model_name == 'lightfm_model':
-    #    lightfm_model = LightFM.model
-     #   recos = lightfm_model.recommend(user_id, k_recs)
-      #  popular_recs = Popular.recs
-       # popular_reco = list(popular_recs.item_id)
-
-        #if len(recos) <= k_recs:
-         #   reco = recos[recos.score > 1.5]
-        #reco = list(reco.item_id)
-        #i = 0
-        #while len(reco) < k_recs:
-         #   if popular_reco[i] not in reco:
-          #      reco.append(popular_reco[i])
-           # i += 1
 
     return RecoResponse(user_id=user_id, items=reco)
 
