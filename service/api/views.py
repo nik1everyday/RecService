@@ -12,7 +12,8 @@ from service.api.exceptions import (
 )
 from service.api.responses import responses
 from service.log import app_logger
-from service.reco_models.model_classes import Popular, UserKNN
+from service.reco_models.model_classes import Popular, UserKNN, LightFM
+
 
 # config_file = 'service/config/config.yaml'
 with open('service/config/config.yaml') as stream:
@@ -29,6 +30,7 @@ bearer_scheme = HTTPBearer()
 
 UserKNN.load_model()
 Popular.load_model()
+LightFM.load_model()
 
 
 @router.get(
@@ -96,6 +98,13 @@ async def get_reco(
                     reco.append(popular_reco[i])
                 i += 1
 
+    elif model_name == 'lightfm_model':
+        # Online
+        lightfm_model = LightFM.model
+        reco = lightfm_model.recommend(user_id, k_recs)
+
+        if not reco:
+            reco = list(Popular.recs.item_id)
     return RecoResponse(user_id=user_id, items=reco)
 
 
