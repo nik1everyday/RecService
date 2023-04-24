@@ -33,11 +33,6 @@ Popular.load_model()
 # LightFM.load_model()
 
 
-@router.get("/sentry-debug")
-async def trigger_error():
-    division_by_zero = 1 / 0
-
-
 @router.get(
     path="/health",
     tags=["Health"],
@@ -52,29 +47,38 @@ async def health() -> str:
     response_model=RecoResponse,
     responses=responses,
 )
+async def check_errors(
+    request: Request,
+    model_name: str,
+    user_id: int,
+    token: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+):
+
+    if token.credentials != request.app.state.token:
+        raise NotAuthorizedError(error_message=f"Token {user_id} is incorrect")
+    elif model_name not in request.app.state.models:
+        raise ModelNotFoundError(
+            error_message=f"Model name {model_name} not found")
+    elif user_id > 10**9:
+        raise UserNotFoundError(error_message=f"User {user_id} not found")
+    elif user_id % 666 == 0:
+        raise Error666(error_message=f"User {user_id} is wrong")
+
+
 async def get_reco(
     request: Request,
     model_name: str,
     user_id: int,
     token: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> RecoResponse:
-    global reco
+
+    await check_errors(request, model_name, user_id, token)
+
     app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
 
-    # errors
-    if token.credentials != request.app.state.token:
-        raise NotAuthorizedError(error_message=f"Token {user_id} is incorrect")
-    elif model_name not in request.app.state.models:
-        raise ModelNotFoundError(
-            error_message=f"Model name {model_name} not found"
-        )
-    elif user_id > 10**9:
-        raise UserNotFoundError(error_message=f"User {user_id} not found")
-    elif user_id % 666 == 0:
-        raise Error666(error_message=f"User {user_id} is wrong")
-
-    # models
     k_recs = request.app.state.k_recs
+    reco = []
+
     if model_name == 'test_model':
         reco = list(range(k_recs))
 
@@ -105,13 +109,14 @@ async def get_reco(
                     reco.append(popular_reco[i])
                 i += 1
 
-    # elif model_name == 'lightfm_model':
-    #     # Online
-    #     lightfm_model = LightFM.model
-    #     reco = lightfm_model.recommend(user_id, k_recs)
-    #
-    #     if not reco:
-    #         reco = list(Popular.recs.item_id)
+        # elif model_name == 'lightfm_model':
+        #     # Online
+        #     lightfm_model = LightFM.model
+        #     reco = lightfm_model.recommend(user_id, k_recs)
+        #
+        #     if not reco:
+        #         reco = list(Popular.recs.item_id)
+
     return RecoResponse(user_id=user_id, items=reco)
 
 
