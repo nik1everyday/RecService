@@ -15,6 +15,7 @@ from service.api.responses import responses
 from service.log import app_logger
 from service.reco_models.model_classes import Popular, UserKNN  # LightFM
 
+
 # config_file = 'service/config/config.yaml'
 with open('service/config/config.yaml') as stream:
     config = yaml.safe_load(stream)

@@ -7,5 +7,6 @@ popular_model:
   online: 'data/popular_model.dill'
   offline: 'data/popular_recos.csv'
 
+
 lightfm_model:
   online: 'data/lightfm_model.dill'
