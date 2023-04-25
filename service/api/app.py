@@ -2,8 +2,10 @@ import asyncio
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Any, Dict
 
+import sentry_sdk
 import uvloop
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from ..log import app_logger, setup_logging
 from ..settings import ServiceConfig
@@ -13,6 +15,10 @@ from .views import add_views
 
 __all__ = ("create_app",)
 
+sentry_sdk.init(
+    dsn="https://0b78febaac224b32b28674413c94a0b0@o4505051663630336.ingest.sentry.io/4505051666251776",
+    traces_sample_rate=1.0,
+)
 
 def setup_asyncio(thread_name_prefix: str) -> None:
     uvloop.install()
@@ -37,6 +43,8 @@ def create_app(config: ServiceConfig) -> FastAPI:
     app.state.k_recs = config.k_recs
     app.state.token = config.token
     app.state.models = config.models
+
+    Instrumentator().instrument(app).expose(app)
 
     add_views(app)
     add_middlewares(app)
