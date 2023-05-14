@@ -13,7 +13,8 @@ from service.api.exceptions import (
 )
 from service.api.responses import responses
 from service.log import app_logger
-from service.reco_models.model_classes import Popular, UserKNN, PopularByAge
+from service.reco_models.model_classes import Popular, UserKNN
+from ..interpretation.percentage import calculate_item_relevance, load_data
 
 # config_file = 'service/config/config.yaml'
 with open('service/config/config.yaml') as stream:
@@ -36,7 +37,8 @@ bearer_scheme = HTTPBearer()
 UserKNN.load_model()
 Popular.load_model()
 # LightFM.load_model()
-PopularByAge.load_model()
+interactions_df, users_df, items_df, userknn_df, user_similarity_matrix = \
+    load_data()
 
 
 @router.get(
@@ -155,9 +157,15 @@ async def explain(
     app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
 
     await check_errors(request, model_name, user_id, item_id, token)
-    p = 1
-    exp = 'abc'
-    return ExplainResponse(p=p, explanation=exp)
+
+    item_relevance = calculate_item_relevance(user_id, userknn_df,
+                                              user_similarity_matrix)
+    relevance = item_relevance[
+        item_relevance['item_id'] == item_id]['score'].values[0]
+    explanation = f"Relevance for item {item_id} is {item_relevance}, " \
+                  f"you might like it because "\
+                  f"users like you interacted with this content"
+    return ExplainResponse(p=relevance, explanation=explanation)
 
 
 def add_views(app: FastAPI) -> None:
