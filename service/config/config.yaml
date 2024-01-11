@@ -13,3 +13,8 @@ lightfm_model:
 
 popular_by_age_model:
   offline: 'data/popular_by_age_model.csv'
+
+original_data:
+  interactions: 'data/kion_train/interactions.csv'
+  users: 'data/kion_train/users.csv'
+  items: 'data/kion_train/items.csv'
