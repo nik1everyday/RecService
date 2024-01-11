@@ -16,6 +16,7 @@ from service.log import app_logger
 from service.reco_models.model_classes import Popular, UserKNN
 from ..interpretation.percentage import calculate_item_relevance, load_data
 
+
 # config_file = 'service/config/config.yaml'
 with open('service/config/config.yaml') as stream:
     config = yaml.safe_load(stream)
@@ -39,6 +40,7 @@ Popular.load_model()
 # LightFM.load_model()
 interactions_df, users_df, items_df, userknn_df, user_similarity_matrix = \
     load_data()
+
 
 
 @router.get(
@@ -73,19 +75,31 @@ async def check_errors(
     response_model=RecoResponse,
     responses=responses,
 )
+async def check_errors(
+    request: Request,
+    model_name: str,
+    user_id: int,
+    token: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+):
+
+  
+    await check_errors(request, model_name, user_id, token)
+
+
 async def get_reco(
     request: Request,
     model_name: str,
     user_id: int,
     token: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> RecoResponse:
-    global reco
-    app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
 
     await check_errors(request, model_name, user_id, token)
 
-    # models
+    app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
+
     k_recs = request.app.state.k_recs
+    reco = []
+
     if model_name == 'test_model':
         reco = list(range(k_recs))
 
@@ -116,13 +130,14 @@ async def get_reco(
                     reco.append(popular_reco[i])
                 i += 1
 
-    # elif model_name == 'lightfm_model':
-    #     # Online
-    #     lightfm_model = LightFM.model
-    #     reco = lightfm_model.recommend(user_id, k_recs)
-    #
-    #     if not reco:
-    #         reco = list(Popular.recs.item_id)
+        # elif model_name == 'lightfm_model':
+        #     # Online
+        #     lightfm_model = LightFM.model
+        #     reco = lightfm_model.recommend(user_id, k_recs)
+        #
+        #     if not reco:
+        #         reco = list(Popular.recs.item_id)
+
     return RecoResponse(user_id=user_id, items=reco)
 
 
